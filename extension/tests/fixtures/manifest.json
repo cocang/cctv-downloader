@@ -1,0 +1,75 @@
+[
+  {
+    "file": "ac26185f_450_2.ts",
+    "guid": "ac26185fe0864c969745d668c0d88ceb",
+    "quality": "450",
+    "segment": 2,
+    "note": "IDR 密钥区含防竞争字节",
+    "nals": 765,
+    "clearSha256": "a2d69f953eb03bed44d6449c2ec7f6b4abfe988dffed1a83277eebd30c176be6"
+  },
+  {
+    "file": "662f3ac3_850_19.ts",
+    "guid": "662f3ac3a08242dfa2a3da296d6a61f9",
+    "quality": "850",
+    "segment": 19,
+    "note": "末尾极小 IDR 不重新转义",
+    "nals": 480,
+    "clearSha256": "c6092964719cc7cece89855ba99284fef34263378bf45d14e451df0735f7497e"
+  },
+  {
+    "file": "662f3ac3_450_19.ts",
+    "guid": "662f3ac3a08242dfa2a3da296d6a61f9",
+    "quality": "450",
+    "segment": 19,
+    "note": "末尾极小 IDR（450）",
+    "nals": 480,
+    "clearSha256": "2458a6a3b5140a513a4ac085eb3fe309c16d7e5b145faac6fe969f9c17ee22f9"
+  },
+  {
+    "file": "1aa2b63b_450_1.ts",
+    "guid": "1aa2b63b2a164496b2a8b29b03ce91b5",
+    "quality": "450",
+    "segment": 1,
+    "note": "Type1 61 e0 81 类头部",
+    "nals": 766,
+    "clearSha256": "69bb3f3188734a39dd3ae5f6d967c71a4682ee3b92722c0717c712c34b154449"
+  },
+  {
+    "file": "dff2ea4f_450_30.ts",
+    "guid": "dff2ea4f955f4e5283cd61d7e5e6dc82",
+    "quality": "450",
+    "segment": 30,
+    "note": "2018 年节目",
+    "nals": 765,
+    "clearSha256": "1f5a7389700d9789e4d6dc25d69b6296b41feb330bc811a32c74fec90b826bc3"
+  },
+  {
+    "file": "ca70aca1_850_2.ts",
+    "guid": "ca70aca18a384576b1ebddc0e354254f",
+    "quality": "850",
+    "segment": 2,
+    "note": "EPB 移除",
+    "nals": 510,
+    "clearSha256": "75ccfa965d65d243c80d3b13f9fde38d851ec448fd91aafe5fccf08f44f5658b"
+  },
+  {
+    "file": "74556a2e_450_5.ts",
+    "guid": "74556a2e7e8d40a3a67682be22587f14",
+    "quality": "450",
+    "segment": 5,
+    "note": "SEI 位于 SPS 之前",
+    "nals": 765,
+    "clearSha256": "803fde9fb049e55765354058c5c0a52b087d910d17cb0a39ccda4dcdb704f101"
+  },
+  {
+    "file": "74556a2e_1200_26_classic.ts",
+    "guid": "74556a2e7e8d40a3a67682be22587f14",
+    "quality": "1200",
+    "segment": 26,
+    "note": "经典模式（无同编码明文，以 ffmpeg 零错误输出为基准）",
+    "oracle": "ffmpeg",
+    "nals": 765,
+    "clearSha256": "9368410f89b3ba7512ae59ad142255373bd647390a77985a66df758ccd4077e2"
+  }
+]

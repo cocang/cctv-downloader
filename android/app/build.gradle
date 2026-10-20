@@ -1,0 +1,110 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
+}
+
+android {
+    namespace 'com.chouchang.cctvdl'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.chouchang.cctvdl'
+        minSdk 26
+        targetSdk 35
+        versionCode 8
+        versionName '1.0.0'
+    }
+
+    // 发布签名：在 android/keystore.properties（不入库）中提供
+    //   storeFile=/path/to/release.keystore
+    //   storePassword=…  keyAlias=…  keyPassword=…
+    // 未提供时 release 构建使用调试签名，便于直接编译试用
+    def ksFile = rootProject.file('keystore.properties')
+    def ks = new Properties()
+    if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+    signingConfigs {
+        release {
+            if (ks['storeFile']) {
+                storeFile file(ks['storeFile'])
+                storePassword ks['storePassword']
+                keyAlias ks['keyAlias']
+                keyPassword ks['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig ks['storeFile'] ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildFeatures { compose true; buildConfig true }
+    packaging { resources { excludes += '/META-INF/{AL2.0,LGPL2.1}' } }
+    // Robolectric：在电脑上运行真实的安卓框架代码，验证启动流程并生成界面截图（./gradlew testReleaseUnitTest）
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                maxHeapSize = '3g'
+                systemProperty 'robolectric.graphicsMode', 'NATIVE'
+                systemProperty 'robolectric.pixelCopyRenderMode', 'hardware'
+                systemProperty 'roborazzi.test.record', 'true'
+                systemProperty 'shots.dir', rootProject.file('build/shots').absolutePath
+                // 可选：离线 Robolectric 依赖目录 / 指定测试 JVM（原生图形库仅提供 x86_64 版本）
+                if (project.hasProperty('robolectricDeps')) systemProperty 'robolectric.dependency.dir', project.property('robolectricDeps')
+                if (project.hasProperty('robolectricDeps')) systemProperty 'robolectric.offline', 'true'
+                if (project.hasProperty('testJava')) executable = project.property('testJava')
+                systemProperty 'robolectric.sqliteMode', 'LEGACY'
+                systemProperty 'robolectric.conscryptMode', 'OFF'
+            }
+        }
+    }
+    androidResources { noCompress += ['js', 'css', 'html'] }
+    sourceSets { main { assets.srcDir layout.buildDirectory.dir('generated/engine') } }
+}
+
+// 下载引擎与浏览器扩展共用同一份源码（../extension/src），构建时同步进 assets
+def ext = rootProject.file('../extension/src')
+def syncEngine = tasks.register('syncEngine', Sync) {
+    from(new File(ext, 'core')) {
+        include 'cctv-api.js', 'color.js', 'h5e-decrypt.js', 'live-api.js', 'live-crypto.js', 'mp4-remux.js',
+                'net.js', 'playlist.js', 'ts-pipeline.js', 'cntv-live-module.js', 'cntv-live-module.bin'
+        into 'web/core'
+    }
+    from(new File(ext, 'offscreen/verify.js')) { into 'web/core' }
+    from(new File(ext, 'lib/mux.min.js')) { into 'web/lib' }
+    into layout.buildDirectory.dir('generated/engine')
+}
+tasks.named('preBuild') { dependsOn syncEngine }
+
+kotlin { compilerOptions { jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17 } }
+
+dependencies {
+    implementation platform('androidx.compose:compose-bom:2026.03.00')
+    implementation 'androidx.activity:activity-compose:1.12.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.10.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended:1.7.8'
+    implementation 'io.github.kyant0:backdrop:1.0.6'
+    implementation 'io.github.kyant0:shapes:1.2.0'
+    implementation 'io.coil-kt.coil3:coil-compose:3.3.0'
+    implementation 'io.coil-kt.coil3:coil-network-okhttp:3.3.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+    testImplementation 'io.github.takahirom.roborazzi:roborazzi:1.46.1'
+    testImplementation 'io.github.takahirom.roborazzi:roborazzi-compose:1.46.1'
+    testImplementation 'androidx.test:core:1.6.1'
+    testImplementation 'androidx.compose.ui:ui-test-junit4'
+    testImplementation 'androidx.test.ext:junit:1.2.1'
+}

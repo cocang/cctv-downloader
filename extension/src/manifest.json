@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "CCTV 下载器",
+  "short_name": "CCTV 下载器",
+  "description": "下载央视网视频，录制直播与回看节目，以原始画质保存为 MP4。",
+  "version": "1.0.0",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "128": "assets/icons/icon128.png"
+  },
+  "action": {
+    "default_title": "CCTV 下载器",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "downloads",
+    "downloads.open",
+    "storage",
+    "offscreen",
+    "webRequest",
+    "unlimitedStorage",
+    "notifications",
+    "downloads.ui"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通知栏小图标：胶片 + 向下箭头 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M5,4h14a2,2 0,0 1,2 2v12a2,2 0,0 1,-2 2H5a2,2 0,0 1,-2 -2V6a2,2 0,0 1,2 -2zM4.5,6.5v2h2v-2zM4.5,11v2h2v-2zM4.5,15.5v2h2v-2zM17.5,6.5v2h2v-2zM17.5,11v2h2v-2zM17.5,15.5v2h2v-2zM11,7v5.2l-2.1,-2.1l-1.4,1.4L12,16l4.5,-4.5l-1.4,-1.4L13,12.2V7z" />
+</vector>

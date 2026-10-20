@@ -1,0 +1,12 @@
+{
+  "name": "cctv-downloader-extension",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CCTV 下载器浏览器扩展：构建与回归测试",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "build": "node build/build.js src dist",
+    "test": "node tests/run.js",
+    "test:online": "node tests/online-oracle.test.js"
+  }
+}
