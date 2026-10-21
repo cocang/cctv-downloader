@@ -23,9 +23,11 @@ android {
     def ksFile = rootProject.file('keystore.properties')
     def ks = new Properties()
     if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+    // 密钥文件不存在（例如 CI、Fork）时同样回退到调试签名
+    def hasReleaseKey = ks['storeFile'] && file(ks['storeFile']).exists()
     signingConfigs {
         release {
-            if (ks['storeFile']) {
+            if (hasReleaseKey) {
                 storeFile file(ks['storeFile'])
                 storePassword ks['storePassword']
                 keyAlias ks['keyAlias']
@@ -39,7 +41,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig ks['storeFile'] ? signingConfigs.release : signingConfigs.debug
+            signingConfig hasReleaseKey ? signingConfigs.release : signingConfigs.debug
         }
     }
 

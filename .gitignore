@@ -1,0 +1,21 @@
+# 依赖与构建产物
+node_modules/
+extension/dist/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/web/core/
+android/app/src/main/assets/web/lib/
+*.apk
+*.aab
+
+# 签名（切勿提交）
+android/keystore.properties
+*.keystore
+*.jks
+
+# 系统与编辑器
+.DS_Store
+.idea/
+*.iml
