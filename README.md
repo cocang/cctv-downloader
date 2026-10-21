@@ -140,6 +140,10 @@ cd android
 
 未提供签名配置时，release 包使用调试签名。如需正式签名，请在 `android/keystore.properties` 中填写 `storeFile`、`storePassword`、`keyAlias`、`keyPassword`（该文件不会被提交）。
 
+**发布版本**
+
+推送 `v*` 标签（如 `v1.0.1`）后，GitHub Actions 会自动测试、构建并签名，将扩展 ZIP、Firefox XPI、Android APK 与 `SHA256SUMS.txt` 发布到 Releases。发布前请确认 `extension/src/manifest.json` 与 `android/app/build.gradle` 中的版本号与标签一致，并在仓库 Secrets 中配置 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。
+
 ## 使用须知
 
 - 本项目仅供学习与技术交流参考，下载内容的版权归央视网及相关权利人所有，请勿用于商业用途或公开传播。

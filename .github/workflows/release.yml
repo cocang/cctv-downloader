@@ -1,0 +1,139 @@
+name: Release
+
+# 推送 v* 标签时构建全部安装包并发布到 GitHub Releases。
+# 需要在仓库 Settings → Secrets and variables → Actions 中配置：
+#   ANDROID_KEYSTORE_BASE64   release.keystore 的 Base64 内容
+#   ANDROID_KEYSTORE_PASSWORD 密钥库口令
+#   ANDROID_KEY_ALIAS         密钥别名
+#   ANDROID_KEY_PASSWORD      密钥口令
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的已有标签，例如 v1.0.0'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  extension:
+    name: 扩展 · 打包
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 校验版本号
+        working-directory: extension
+        run: |
+          V=$(node -p "require('./src/manifest.json').version")
+          [ "v$V" = "$TAG" ] || { echo "::error::扩展版本 $V 与标签 $TAG 不一致"; exit 1; }
+      - name: 测试与构建
+        working-directory: extension
+        run: npm test && npm run build
+      - name: 打包
+        run: |
+          V=${TAG#v}; mkdir -p out
+          (cd extension/dist/chrome && zip -qr -X "$GITHUB_WORKSPACE/out/cctv-downloader-extension-$V-chromium.zip" .)
+          (cd extension/dist/firefox && zip -qr -X "$GITHUB_WORKSPACE/out/cctv-downloader-extension-$V-firefox.xpi" .)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: out/*
+
+  android:
+    name: Android · 签名构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: 校验版本号
+        run: |
+          V=$(sed -n "s/.*versionName[ =]*['\"]\([^'\"]*\)['\"].*/\1/p" android/app/build.gradle | head -1)
+          [ "v$V" = "$TAG" ] || { echo "::error::Android versionName $V 与标签 $TAG 不一致"; exit 1; }
+      - name: 写入签名配置
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
+            echo "::error::未配置 Android 签名 Secrets，发布版不能使用调试签名"; exit 1
+          fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
+            echo "storePassword=$KS_PASS"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASS"
+          } > android/keystore.properties
+      - name: 构建
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+      - name: 校验签名并改名
+        run: |
+          V=${TAG#v}; mkdir -p out
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$SIGNER" verify --print-certs "$APK" | tee certs.txt
+          grep -qi 'Android Debug' certs.txt && { echo "::error::APK 使用了调试签名"; exit 1; }
+          cp "$APK" "out/cctv-downloader-android-$V.apk"
+          grep -m1 'SHA-256 digest' certs.txt | awk '{print $NF}' > out/.cert
+      - name: 清理签名文件
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore" android/keystore.properties
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/
+          include-hidden-files: true
+
+  release:
+    name: 发布
+    needs: [extension, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: 生成说明与校验和
+        run: |
+          V=${TAG#v}; CERT=$(cat dist/.cert); rm dist/.cert
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+          cat > notes.md <<NOTES
+          | 文件 | 说明 |
+          | --- | --- |
+          | \`cctv-downloader-extension-$V-chromium.zip\` | Chrome / Edge 扩展，解压后在扩展管理页以「加载已解压的扩展程序」安装 |
+          | \`cctv-downloader-extension-$V-firefox.xpi\` | Firefox 扩展（未签名，需 Firefox 140 及以上） |
+          | \`cctv-downloader-android-$V.apk\` | Android 应用（Android 8.0 及以上） |
+          | \`SHA256SUMS.txt\` | 以上文件的 SHA-256 校验和 |
+
+          APK 签名证书 SHA-256：\`$CERT\`
+
+          本项目仅供学习参考，可能随时失效。
+          NOTES
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: CCTV 下载器 ${{ env.TAG }}
+          body_path: notes.md
+          files: dist/*
+          fail_on_unmatched_files: true
